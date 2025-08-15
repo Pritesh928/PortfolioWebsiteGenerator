@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfolio Website Generator</title>
+  <style>
+    :root{
+      --bg:#0b0f17; --panel:#111827; --muted:#94a3b8; --text:#e5e7eb; --brand:#7c3aed; --brand-2:#06b6d4;
+      --card:#0f172a; --ok:#10b981; --warn:#f59e0b; --err:#ef4444;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(120deg,#0b0f17 0%,#111827 100%);color:var(--text);}
+    .wrap{max-width:1200px;margin:0 auto;padding:24px;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+    h1{font-size:clamp(22px,3vw,32px);margin:0;letter-spacing:.3px}
+    .subtitle{color:var(--muted);font-size:14px}
+
+    .grid{display:grid;grid-template-columns:380px 1fr;gap:16px}
+    @media (max-width: 900px){.grid{grid-template-columns:1fr}}
+
+    .panel{background:rgba(17,24,39,.66);backdrop-filter:saturate(160%) blur(6px);border:1px solid rgba(148,163,184,.12);border-radius:18px;padding:16px}
+    .panel h2{margin:0 0 12px;font-size:18px}
+    .row{display:flex;gap:10px}
+    label{display:block;font-size:12px;color:var(--muted);margin:6px 0 6px}
+    input,textarea,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,.2);background:#0b1220;color:var(--text);outline:none}
+    textarea{min-height:84px;resize:vertical}
+    .hint{font-size:12px;color:var(--muted)}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.2);background:linear-gradient(120deg,#1f2937,#0b1220);color:var(--text);cursor:pointer;text-decoration:none}
+    .btn.brand{background:linear-gradient(120deg,var(--brand),var(--brand-2));border:none}
+    .btn.ghost{background:transparent}
+    .stack{display:flex;gap:8px;flex-wrap:wrap}
+    .pill{padding:6px 10px;border-radius:999px;background:#0b1220;border:1px solid rgba(148,163,184,.2);font-size:12px}
+    .danger{color:#fecaca}
+
+    .preview{min-height:480px;border-radius:18px;border:1px dashed rgba(148,163,184,.3);}
+    .footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:12px}
+
+    .section{border-top:1px dashed rgba(148,163,184,.2);padding-top:12px;margin-top:12px}
+
+    /* Tiny preview chrome */
+    .stage{background:#0a0e16;border-radius:14px;overflow:hidden}
+    .stage-head{display:flex;gap:8px;padding:10px;background:#0f1523;border-bottom:1px solid rgba(148,163,184,.15)}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .dot.r{background:#ef4444}.dot.y{background:#f59e0b}.dot.g{background:#10b981}
+    .stage-body{padding:0;background:#fff}
+
+    .small{font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Portfolio Website Generator</h1>
+        <div class="subtitle">Upload JSON or fill the form → preview live → export a ready-to-host HTML file.</div>
+      </div>
+      <div class="stack">
+        <label class="btn" for="jsonFile">📄 Import JSON</label>
+        <input id="jsonFile" type="file" accept="application/json" hidden />
+        <button class="btn ghost" id="loadDemo">⚡ Load Demo</button>
+        <button class="btn brand" id="exportBtn">⬇️ Export HTML</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Builder Panel -->
+      <div class="panel">
+        <h2>Details</h2>
+
+        <label>Full Name<input id="name" placeholder="e.g., Pritesh Singh" /></label>
+        <label>Headline / Title<input id="title" placeholder="e.g., Flutter & Java Developer" /></label>
+        <label>About You<textarea id="about" placeholder="Short bio, what you do and what you enjoy building."></textarea></label>
+
+        <div class="row">
+          <label style="flex:1">Email<input id="email" placeholder="you@email.com" /></label>
+          <label style="flex:1">Location<input id="location" placeholder="City, Country" /></label>
+        </div>
+
+        <div class="row">
+          <label style="flex:1">Profile Photo<input id="avatar" type="file" accept="image/*" /></label>
+          <label style="flex:1">Theme<select id="theme">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="midnight">Midnight</option>
+          </select></label>
+        </div>
+
+        <div class="section">
+          <h2>Skills</h2>
+          <label>Comma separated<input id="skills" placeholder="Java, Flutter, Kotlin, React, SQL" /></label>
+        </div>
+
+        <div class="section">
+          <h2>Projects</h2>
+          <div id="projects"></div>
+          <div class="stack" style="margin-top:8px">
+            <button class="btn" id="addProject">＋ Add Project</button>
+            <span class="small">Each project: title, description, tech, and link.</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Socials</h2>
+          <div class="row">
+            <label style="flex:1">GitHub<input id="github" placeholder="https://github.com/username" /></label>
+            <label style="flex:1">LinkedIn<input id="linkedin" placeholder="https://linkedin.com/in/username" /></label>
+          </div>
+          <div class="row">
+            <label style="flex:1">Portfolio / Website<input id="website" placeholder="https://yourdomain.com" /></label>
+            <label style="flex:1">Twitter / X<input id="twitter" placeholder="https://x.com/username" /></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Preview Panel -->
+      <div class="panel">
+        <h2>Live Preview</h2>
+        <div class="stage">
+          <div class="stage-head"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+          <iframe id="preview" class="preview" title="Preview"></iframe>
+        </div>
+        <div class="footer">
+          <div>
+            <span>Tip: Use <b>Export HTML</b> to download a single file ready for GitHub Pages / Netlify / Vercel.</span>
+          </div>
+          <a class="btn" id="downloadLink" style="display:none">Download</a>
+        </div>
+      </div>
+    </div>
+
+    <details class="panel" style="margin-top:16px">
+      <summary>JSON Schema (for import)</summary>
+      <pre class="hint" style="white-space:pre-wrap">
+{
+  "name": "Your Name",
+  "title": "Headline",
+  "about": "Short bio...",
+  "email": "you@email.com",
+  "location": "City, Country",
+  "theme": "dark | light | midnight",
+  "avatarDataUrl": "data:image/png;base64,...", // optional
+  "skills": ["Java","Flutter","SQL"],
+  "socials": {
+    "github": "https://github.com/you",
+    "linkedin": "https://linkedin.com/in/you",
+    "website": "https://yourdomain.com",
+    "twitter": "https://x.com/you"
+  },
+  "projects": [
+    {"title":"Weather App","description":"Kotlin + XML","tech":["Kotlin","OpenWeather"],"link":"https://github.com/you/weather"}
+  ]
+}
+      </pre>
+    </details>
+  </div>
+
+  <script>
+    // --- Utilities ---
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const el = (tag, attrs={}) => Object.assign(document.createElement(tag), attrs);
+
+    const state = {
+      name: '', title: '', about: '', email: '', location: '', theme:'dark',
+      avatarDataUrl: '',
+      skills: [],
+      socials: { github:'', linkedin:'', website:'', twitter:'' },
+      projects: []
+    };
+
+    // Initialize projects UI with one slot
+    const projectsWrap = $('#projects');
+    const addProjectRow = (proj={title:'',description:'',tech:[],link:''})=>{
+      const row = el('div', {className:'panel', style:'padding:12px;margin:8px 0;background:#0b1220'});
+      const idx = state.projects.push(proj) - 1;
+      row.innerHTML = `
+        <div class="row">
+          <label style="flex:1">Title<input data-k="title" data-i="${idx}" placeholder="e.g., Portfolio Generator" value="${proj.title||''}" /></label>
+          <label style="flex:1">Link<input data-k="link" data-i="${idx}" placeholder="https://..." value="${proj.link||''}" /></label>
+        </div>
+        <label>Description<textarea data-k="description" data-i="${idx}" placeholder="What it does, your role...">${proj.description||''}</textarea></label>
+        <label>Tech (comma separated)<input data-k="tech" data-i="${idx}" placeholder="HTML, CSS, JS" value="${(proj.tech||[]).join(', ')}" /></label>
+        <div class="stack"><button class="btn danger" data-del="${idx}">🗑 Remove</button></div>
+      `;
+      projectsWrap.appendChild(row);
+    };
+
+    $('#addProject').addEventListener('click',()=>{ addProjectRow(); update(); });
+
+    projectsWrap.addEventListener('input', (e)=>{
+      const t = e.target; const i = +t.dataset.i; const k = t.dataset.k; if(Number.isNaN(i)||!k) return;
+      if(k==='tech'){ state.projects[i][k] = t.value.split(',').map(s=>s.trim()).filter(Boolean) }
+      else{ state.projects[i][k] = t.value }
+      update();
+    });
+
+    projectsWrap.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button[data-del]');
+      if(!btn) return;
+      const idx = +btn.dataset.del;
+      state.projects.splice(idx,1);
+      // rebuild UI
+      projectsWrap.innerHTML='';
+      state.projects.forEach(p=>addProjectRow(p));
+      update();
+    });
+
+    // Inputs binding
+    const bind = (id, handler) => $(id.startsWith('#')?id:'#'+id).addEventListener('input', handler);
+
+    bind('name', e=>{ state.name=e.target.value; update(); });
+    bind('title', e=>{ state.title=e.target.value; update(); });
+    bind('about', e=>{ state.about=e.target.value; update(); });
+    bind('email', e=>{ state.email=e.target.value; update(); });
+    bind('location', e=>{ state.location=e.target.value; update(); });
+    bind('skills', e=>{ state.skills = e.target.value.split(',').map(s=>s.trim()).filter(Boolean); update(); });
+    bind('github', e=>{ state.socials.github=e.target.value; update(); });
+    bind('linkedin', e=>{ state.socials.linkedin=e.target.value; update(); });
+    bind('website', e=>{ state.socials.website=e.target.value; update(); });
+    bind('twitter', e=>{ state.socials.twitter=e.target.value; update(); });
+
+    $('#theme').addEventListener('change', e=>{ state.theme=e.target.value; update(); })
+
+    // Avatar to data URL
+    $('#avatar').addEventListener('change', async (e)=>{
+      const file = e.target.files?.[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { state.avatarDataUrl = reader.result; update(); };
+      reader.readAsDataURL(file);
+    });
+
+    // JSON import
+    $('#jsonFile').addEventListener('change', async (e)=>{
+      const file = e.target.files?.[0]; if(!file) return;
+      try{
+        const text = await file.text();
+        const data = JSON.parse(text);
+        Object.assign(state, {
+          name: data.name||'', title: data.title||'', about: data.about||'',
+          email: data.email||'', location: data.location||'', theme: data.theme||'dark',
+          avatarDataUrl: data.avatarDataUrl||'',
+          skills: data.skills||[], socials: Object.assign({github:'',linkedin:'',website:'',twitter:''}, data.socials||{}),
+          projects: data.projects||[]
+        });
+        // Reflect to UI
+        $('#name').value=state.name; $('#title').value=state.title; $('#about').value=state.about;
+        $('#email').value=state.email; $('#location').value=state.location; $('#skills').value=state.skills.join(', ');
+        $('#github').value=state.socials.github; $('#linkedin').value=state.socials.linkedin; $('#website').value=state.socials.website; $('#twitter').value=state.socials.twitter; $('#theme').value=state.theme;
+        // Avatar is dataURL already
+        projectsWrap.innerHTML='';
+        state.projects.forEach(p=>addProjectRow(p));
+        update();
+      }catch(err){ alert('Invalid JSON: '+err.message) }
+    });
+
+    // Demo
+    $('#loadDemo').addEventListener('click', ()=>{
+      const demo = {
+        name:'Pritesh Singh', title:'Flutter • Java • Full‑Stack',
+        about:'I build clean, fast apps. Love Kotlin, Flutter, and shipping things that feel great.',
+        email:'hello@example.com', location:'Bhopal, India', theme:'midnight',
+        skills:['Flutter','Dart','Java','Kotlin','Firebase','SQL','GitHub Actions'],
+        socials:{ github:'https://github.com/prit', linkedin:'https://linkedin.com/in/prit', website:'https://prit.dev', twitter:'https://x.com/prit' },
+        projects:[
+          {title:'Weatherly', description:'Kotlin + XML weather app with offline cache and charts.', tech:['Kotlin','Room','Retrofit'], link:'https://github.com/prit/weatherly'},
+          {title:'TaskFlow', description:'Flutter task manager with beautiful animations and sync.', tech:['Flutter','Firebase'], link:'https://github.com/prit/taskflow'}
+        ]
+      };
+      Object.assign(state, demo);
+      // reflect to UI
+      $('#name').value=state.name; $('#title').value=state.title; $('#about').value=state.about;
+      $('#email').value=state.email; $('#location').value=state.location; $('#skills').value=state.skills.join(', ');
+      $('#github').value=state.socials.github; $('#linkedin').value=state.socials.linkedin; $('#website').value=state.socials.website; $('#twitter').value=state.socials.twitter; $('#theme').value=state.theme;
+      projectsWrap.innerHTML='';
+      state.projects.forEach(p=>addProjectRow(p));
+      update();
+    })
+
+    // Generate Portfolio HTML from state
+    const buildPortfolioHTML = (data) => {
+      const themeVars = {
+        dark: {bg:'#0b0f17',card:'#0f172a',text:'#e5e7eb',muted:'#94a3b8',accent:'#7c3aed'},
+        light:{bg:'#f7fafc',card:'#ffffff',text:'#0b1220',muted:'#475569',accent:'#7c3aed'},
+        midnight:{bg:'#0a0e16',card:'#0d1423',text:'#e2e8f0',muted:'#94a3b8',accent:'#06b6d4'}
+      }[data.theme||'dark'];
+
+      const social = (href,label)=> href?`<a href="${href}" target="_blank" rel="noopener">${label}</a>`:'';
+
+      const projCards = (data.projects||[]).map(p=>`
+        <article class="card">
+          <div class="card-head">
+            <h3>${escapeHtml(p.title||'Untitled')}</h3>
+            ${p.link?`<a href="${p.link}" target="_blank" rel="noopener">↗</a>`:''}
+          </div>
+          <p>${escapeHtml(p.description||'')}</p>
+          ${Array.isArray(p.tech)&&p.tech.length?`<div class="tags">${p.tech.map(t=>`<span>${escapeHtml(t)}</span>`).join('')}</div>`:''}
+        </article>`).join('');
+
+      return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>${escapeHtml(data.name||'My Portfolio')}</title>
+<style>
+  :root{--bg:${themeVars.bg};--card:${themeVars.card};--text:${themeVars.text};--muted:${themeVars.muted};--accent:${themeVars.accent}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  .wrap{max-width:980px;margin:0 auto;padding:28px}
+  header{display:flex;gap:18px;align-items:center}
+  header img{width:88px;height:88px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,.1)}
+  h1{margin:0 0 6px;font-size:clamp(24px,4vw,34px)}
+  .muted{color:var(--muted)}
+  .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(148,163,184,.2);margin-right:6px;margin-bottom:6px}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:22px}
+  .card{background:var(--card);border:1px solid rgba(148,163,184,.2);border-radius:16px;padding:16px}
+  .card-head{display:flex;justify-content:space-between;align-items:center}
+  a{color:var(--accent);text-decoration:none}
+  .tags span{display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.25);margin:4px;font-size:12px}
+  footer{margin-top:30px;color:var(--muted);font-size:12px}
+</style>
+<body>
+  <div class="wrap">
+    <header>
+      ${data.avatarDataUrl?`<img src="${data.avatarDataUrl}" alt="${escapeHtml(data.name||'Avatar')}"/>`:''}
+      <div>
+        <h1>${escapeHtml(data.name||'Your Name')}</h1>
+        <div class="muted">${escapeHtml(data.title||'Your Headline')}</div>
+        <div class="muted">${escapeHtml(data.location||'')}</div>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>About</h2>
+      <p>${escapeHtml(data.about||'')}</p>
+      <div class="muted">${data.email?`📧 <a href="mailto:${escapeAttr(data.email)}">${escapeHtml(data.email)}</a>`:''}</div>
+      <div class="muted" style="margin-top:6px">${[social(data.socials?.github,'GitHub'),social(data.socials?.linkedin,'LinkedIn'),social(data.socials?.website,'Website'),social(data.socials?.twitter,'Twitter')].filter(Boolean).join(' • ')}</div>
+    </section>
+
+    ${Array.isArray(data.skills)&&data.skills.length?`<section class="card"><h2>Skills</h2>${data.skills.map(s=>`<span class="pill">${escapeHtml(s)}</span>`).join('')}</section>`:''}
+
+    ${Array.isArray(data.projects)&&data.projects.length?`<section><h2>Projects</h2><div class="grid">${projCards}</div></section>`:''}
+
+    <footer>Built with the Portfolio Generator • Host this single HTML file anywhere.</footer>
+  </div>
+</body></html>`
+    };
+
+    // HTML escape helpers
+    const escapeHtml = (s='')=>String(s)
+      .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+      .replaceAll('"','&quot;').replaceAll("'","&#39;");
+    const escapeAttr = (s='')=>escapeHtml(s).replaceAll('"','&quot;');
+
+    // Update preview
+    const update = ()=>{
+      const html = buildPortfolioHTML(state);
+      const iframe = $('#preview');
+      iframe.srcdoc = html;
+    };
+
+    // Export as downloadable HTML
+    $('#exportBtn').addEventListener('click', ()=>{
+      const html = buildPortfolioHTML(state);
+      const blob = new Blob([html], {type:'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = $('#downloadLink');
+      a.href = url; a.download = `${(state.name||'portfolio').toLowerCase().replace(/\s+/g,'-')}.html`;
+      a.style.display = 'inline-flex';
+      a.textContent = 'Download HTML';
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 5000);
+    });
+
+    // Start with an empty project row
+    addProjectRow();
+    update();
+  </script>
+</body>
+</html>
